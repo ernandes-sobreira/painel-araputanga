@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz Saúde e Clima | Conferência Municipal de Saúde</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<style>
+  :root{
+    --verde:#1b9e54;--verde-esc:#127a40;--azul:#1f7ae0;--laranja:#f08a24;
+    --vermelho:#e0463a;--cinza:#5a6470;--fundo:#ffffff;--suave:#f4f7f5;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--fundo);color:#1d2630;line-height:1.5;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:600px;margin:0 auto;padding:24px 18px 60px;min-height:100vh;}
+  .topo{text-align:center;padding:18px 0 8px;}
+  .topo .tag{display:inline-block;background:var(--suave);color:var(--verde-esc);font-size:12px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;padding:6px 14px;border-radius:20px;margin-bottom:14px;}
+  h1{font-size:26px;color:var(--verde-esc);margin-bottom:6px;line-height:1.2;}
+  .sub{color:var(--cinza);font-size:15px;max-width:440px;margin:0 auto;}
+  .card{background:#fff;border:1px solid #e6ece8;border-radius:16px;padding:22px;margin-top:22px;box-shadow:0 2px 10px rgba(27,158,84,.06);}
+  label{display:block;font-size:13px;font-weight:600;color:var(--cinza);margin-bottom:6px;}
+  input[type=text],textarea{width:100%;padding:13px 14px;border:1.5px solid #d8e0db;border-radius:10px;font-size:16px;outline:none;transition:border .15s;font-family:inherit;}
+  input[type=text]:focus,textarea:focus{border-color:var(--verde);}
+  textarea{resize:vertical;min-height:90px;}
+  .btn{display:block;width:100%;border:none;border-radius:11px;padding:15px;font-size:16px;font-weight:700;cursor:pointer;transition:transform .08s,opacity .15s;margin-top:16px;}
+  .btn:active{transform:scale(.98);}
+  .btn-verde{background:var(--verde);color:#fff;}
+  .btn-azul{background:var(--azul);color:#fff;}
+  .btn-claro{background:var(--suave);color:var(--verde-esc);}
+  .btn:disabled{opacity:.5;cursor:default;}
+  .progresso{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;font-size:13px;color:var(--cinza);font-weight:600;}
+  .barra{height:7px;background:var(--suave);border-radius:6px;overflow:hidden;margin-top:10px;}
+  .barra span{display:block;height:100%;background:var(--verde);transition:width .3s;}
+  .nivel{display:inline-block;font-size:11px;font-weight:700;padding:3px 10px;border-radius:12px;text-transform:uppercase;letter-spacing:.4px;}
+  .n-facil{background:#e3f6ea;color:var(--verde-esc);}
+  .n-medio{background:#fdf0dd;color:#b9690e;}
+  .n-dificil{background:#fbe2df;color:#b32d22;}
+  .tema{font-size:11px;color:var(--cinza);font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-top:14px;}
+  .cidade-selo{display:inline-block;background:var(--suave);color:var(--verde-esc);font-weight:700;font-size:13px;padding:7px 16px;border-radius:18px;margin-bottom:16px;}
+  .comp-linha{display:flex;gap:12px;margin:14px 0 6px;}
+  .comp-box{flex:1;background:var(--suave);border-radius:12px;padding:14px 8px;text-align:center;}
+  .comp-v{font-size:26px;font-weight:800;line-height:1;}
+  .comp-l{font-size:11.5px;color:var(--cinza);margin-top:6px;}
+  /* blocos */
+  .card.bloco{border-top:6px solid var(--bcor,#1b9e54);}
+  .bloco-chip{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:4px 11px;border-radius:14px;color:#fff;background:var(--bcor,#1b9e54);}
+  .barra span.bfill{background:var(--bcor,#1b9e54);}
+  .opcao.certa.bsel{border-color:var(--bcor);background:var(--bsuave);color:var(--bcoresc);}
+  .explica.bexp{border-left-color:var(--bcor);}
+  .explica.bexp b{color:var(--bcoresc);}
+  .btn-bloco{background:var(--bcor,#1b9e54);color:#fff;}
+  /* tela de intro de bloco */
+  .intro-bloco{text-align:center;padding:30px 16px;border-radius:18px;color:#fff;background:var(--bcor);box-shadow:0 6px 20px rgba(0,0,0,.12);}
+  .intro-bloco .num{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;opacity:.9;}
+  .intro-bloco h2{font-size:30px;margin:10px 0 6px;line-height:1.15;}
+  .intro-bloco p{font-size:15px;opacity:.95;max-width:340px;margin:0 auto;}
+  .intro-bloco .qtd{margin-top:16px;font-size:13px;font-weight:600;background:rgba(255,255,255,.2);display:inline-block;padding:6px 14px;border-radius:16px;}
+  .pergunta{font-size:19px;font-weight:600;margin:6px 0 20px;line-height:1.35;}
+  .opcoes{display:flex;flex-direction:column;gap:11px;}
+  .opcao{text-align:left;background:#fff;border:1.5px solid #d8e0db;border-radius:12px;padding:14px 16px;font-size:15.5px;cursor:pointer;transition:border .12s,background .12s;line-height:1.35;}
+  .opcao:hover{border-color:var(--verde);background:var(--suave);}
+  .opcao.certa{border-color:var(--verde);background:#e7f7ee;color:var(--verde-esc);font-weight:600;}
+  .opcao.errada{border-color:var(--vermelho);background:#fcebe9;color:#a8281d;}
+  .opcao.bloqueada{cursor:default;pointer-events:none;}
+  .opcao.atenuada{opacity:.5;}
+  .explica{margin-top:18px;background:var(--suave);border-left:4px solid var(--verde);border-radius:8px;padding:14px 16px;font-size:14.5px;color:#2c3a42;display:none;}
+  .explica.show{display:block;}
+  .explica b{color:var(--verde-esc);}
+  .fonte{display:block;margin-top:8px;font-size:12px;color:var(--cinza);}
+  .placar-final{text-align:center;}
+  .placar-final .nota{font-size:54px;font-weight:800;color:var(--verde-esc);line-height:1;margin:10px 0;}
+  .placar-final .faixa{font-size:17px;font-weight:600;margin-bottom:8px;}
+  #qrbox{display:flex;justify-content:center;padding:16px;background:#fff;border-radius:12px;}
+  .url-mini{font-size:12px;color:var(--cinza);word-break:break-all;text-align:center;margin-top:10px;}
+  .hint{font-size:12.5px;color:var(--cinza);margin-top:10px;text-align:center;}
+  .erro-cfg{background:#fcebe9;color:#a8281d;padding:14px;border-radius:10px;font-size:14px;margin-top:16px;}
+  .rodape{text-align:center;font-size:12px;color:#9aa6ad;margin-top:30px;}
+  .stat-linha{display:flex;gap:12px;margin-top:16px;}
+  .stat{flex:1;background:var(--suave);border-radius:12px;padding:16px 10px;text-align:center;}
+  .stat .v{font-size:30px;font-weight:800;color:var(--verde-esc);line-height:1;}
+  .stat .l{font-size:12px;color:var(--cinza);margin-top:6px;}
+  .grafico{margin-top:8px;}
+  .gbar-linha{display:flex;align-items:center;gap:10px;margin:7px 0;font-size:13px;}
+  .gbar-rot{width:48px;text-align:right;color:var(--cinza);font-weight:600;flex-shrink:0;}
+  .gbar-trilho{flex:1;background:var(--suave);border-radius:6px;height:22px;overflow:hidden;}
+  .gbar-fill{height:100%;background:var(--verde);border-radius:6px;transition:width .5s;min-width:2px;}
+  .gbar-num{width:34px;font-weight:700;color:var(--verde-esc);flex-shrink:0;}
+  .nuvem{display:flex;flex-wrap:wrap;gap:8px 12px;justify-content:center;align-items:center;padding:8px 0 4px;line-height:1.2;}
+  .nuvem span{color:var(--verde-esc);font-weight:700;}
+  .sugcard{background:var(--suave);border-radius:10px;padding:11px 14px;margin:8px 0;font-size:14px;color:#2c3a42;border-left:3px solid var(--azul);}
+  .secao-tit{font-size:16px;color:var(--verde-esc);font-weight:700;margin:24px 0 4px;}
+  .nivel-grid{display:flex;gap:12px;margin-top:14px;}
+  .nivel-box{flex:1;border-radius:14px;padding:16px 12px;text-align:center;color:#fff;}
+  .nivel-box.b{background:linear-gradient(135deg,#1b9e54,#127a40);}
+  .nivel-box.m{background:linear-gradient(135deg,#f0a830,#d97a0c);}
+  .nivel-box.av{background:linear-gradient(135deg,#e0463a,#b32d22);}
+  .nivel-box .pc{font-size:32px;font-weight:800;line-height:1;}
+  .nivel-box .nm{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-top:6px;opacity:.95;}
+  .nivel-box .det{font-size:11px;margin-top:4px;opacity:.85;}
+  .tema-linha{margin:12px 0;}
+  .tema-topo{display:flex;justify-content:space-between;font-size:13.5px;margin-bottom:5px;}
+  .tema-topo .tt{font-weight:600;color:#2c3a42;}
+  .tema-topo .tp{font-weight:700;color:var(--verde-esc);}
+  .tema-trilho{height:14px;background:var(--suave);border-radius:7px;overflow:hidden;}
+  .tema-fill{height:100%;border-radius:7px;transition:width .6s;}
+  .bloco-result{background:var(--bsuave);border-left:5px solid var(--bcor);border-radius:12px;padding:13px 15px;margin:12px 0;}
+  .br-topo{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;}
+  .br-nome{font-weight:700;color:var(--bcoresc);font-size:14.5px;}
+  .br-pc{font-weight:800;color:var(--bcoresc);font-size:18px;}
+  .br-trilho{height:12px;background:#fff;border-radius:6px;overflow:hidden;}
+  .br-fill{height:100%;background:var(--bcor);border-radius:6px;transition:width .6s;}
+  .br-det{font-size:12px;color:var(--cinza);margin-top:5px;}
+  /* mentimeter participante */
+  .escala-val{font-size:46px;font-weight:800;text-align:center;color:#127a40;line-height:1;margin:6px 0 4px;}
+  .escala-ext{display:flex;justify-content:space-between;font-size:12px;color:var(--cinza);margin-top:4px;}
+  .radar-item{display:flex;align-items:center;gap:10px;margin:9px 0;}
+  .radar-rot{width:84px;font-size:13.5px;font-weight:600;color:#2c3a42;flex-shrink:0;}
+  .radar-item input{flex:1;}
+  .radar-num{width:22px;text-align:right;font-weight:700;color:#0f9b8e;}
+  /* mentimeter telão */
+  .menti-nuvem{display:flex;flex-wrap:wrap;gap:6px 16px;justify-content:center;align-items:center;padding:14px 4px;}
+  .mb-linha{display:flex;align-items:center;gap:10px;margin:10px 0;font-size:14px;}
+  .mb-rot{width:130px;flex-shrink:0;color:#2c3a42;font-weight:600;}
+  .mb-trilho{flex:1;background:var(--suave);border-radius:7px;height:26px;overflow:hidden;}
+  .mb-fill{height:100%;border-radius:7px;transition:width .5s;min-width:2px;}
+  .mb-num{width:74px;flex-shrink:0;font-weight:700;color:#2c3a42;font-size:13px;}
+  .pz-wrap{display:flex;gap:18px;align-items:center;flex-wrap:wrap;justify-content:center;}
+  .pz-svg{width:200px;height:200px;flex-shrink:0;}
+  .pz-legs{flex:1;min-width:160px;}
+  .pz-leg{display:flex;align-items:center;gap:8px;font-size:14px;margin:7px 0;color:#2c3a42;}
+  .pz-cor{width:14px;height:14px;border-radius:3px;flex-shrink:0;}
+  .es-media{font-size:40px;font-weight:800;text-align:center;margin-bottom:10px;}
+  .es-media span{font-size:14px;font-weight:600;color:var(--cinza);}
+  .es-graf{display:flex;align-items:flex-end;gap:5px;height:150px;padding-top:8px;}
+  .es-col{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;}
+  .es-bar{width:100%;border-radius:5px 5px 0 0;min-height:2px;transition:height .5s;}
+  .es-rot{font-size:11px;color:var(--cinza);margin-top:5px;}
+  .rd-svg{width:100%;max-width:300px;display:block;margin:0 auto;}
+  .rd-legs{display:flex;flex-wrap:wrap;gap:6px 16px;justify-content:center;margin-top:10px;font-size:13.5px;color:#2c3a42;}
+  .rd-leg b{color:#0f9b8e;}
+  /* apresentador */
+  .adm-nav{display:flex;gap:10px;}
+  .adm-nav .btn{margin-top:0;}
+  .adm-q{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:#fff;border:1.5px solid #d8e0db;border-radius:11px;padding:11px 13px;margin:8px 0;cursor:pointer;font-size:14px;}
+  .adm-q.ativa{border-color:#127a40;background:#e7f7ee;}
+  .adm-n{width:24px;height:24px;border-radius:50%;background:#127a40;color:#fff;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .adm-t{flex:1;color:#2c3a42;}
+  .adm-tipo{font-size:11px;text-transform:uppercase;color:var(--cinza);font-weight:700;}
+  /* dois cards de escolha na tela inicial */
+  .card-escolha{display:flex;align-items:center;gap:14px;background:#fff;border:1.5px solid #e6ece8;border-radius:16px;padding:20px;margin-top:16px;cursor:pointer;transition:transform .08s,box-shadow .15s,border-color .15s;box-shadow:0 2px 10px rgba(0,0,0,.04);}
+  .card-escolha:active{transform:scale(.985);}
+  .card-menti{border-left:6px solid #8a4fd6;}
+  .card-menti:hover{border-color:#8a4fd6;box-shadow:0 4px 16px rgba(138,79,214,.16);}
+  .card-quiz{border-left:6px solid #1b9e54;}
+  .card-quiz:hover{border-color:#1b9e54;box-shadow:0 4px 16px rgba(27,158,84,.16);}
+  .ce-icone{font-size:34px;line-height:1;flex-shrink:0;}
+  .ce-txt{flex:1;}
+  .ce-tit{font-size:19px;font-weight:800;color:#1d2630;margin-bottom:3px;}
+  .ce-sub{font-size:13.5px;color:var(--cinza);line-height:1.4;}
+  .ce-seta{font-size:30px;color:#c2ccc6;font-weight:700;flex-shrink:0;}
+  .acoes-sec{display:flex;gap:10px;justify-content:center;margin-top:20px;flex-wrap:wrap;}
+  .link-sec{background:none;border:none;color:var(--verde-esc);font-size:14px;font-weight:600;cursor:pointer;padding:8px 12px;border-radius:8px;}
+  .link-sec:hover{background:var(--suave);}
+  .qr-tit{font-size:18px;font-weight:800;text-align:center;margin-bottom:4px;}
+  /* dois cards: lado a lado no desktop, empilhado no celular */
+  .dois-cards{display:flex;flex-direction:column;gap:16px;margin-top:8px;}
+  .card-grande{background:#fff;border:1px solid #e6ece8;border-radius:18px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,.05);display:flex;flex-direction:column;}
+  .card-g-quiz{border-top:6px solid #1b9e54;}
+  .card-g-menti{border-top:6px solid #8a4fd6;}
+  .cg-icone{font-size:40px;line-height:1;margin-bottom:10px;}
+  .cg-tit{font-size:22px;font-weight:800;color:#1d2630;margin-bottom:6px;}
+  .cg-sub{font-size:14px;color:var(--cinza);line-height:1.45;}
+  .btn-menti{background:#8a4fd6;color:#fff;margin-top:auto;}
+  @media(min-width:760px){
+    .wrap:has(.dois-cards){max-width:880px;}
+    .dois-cards{flex-direction:row;align-items:stretch;}
+    .dois-cards>.card-grande{flex:1;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyCAPlKzxXdExvXTrvYBGA1-h6LF4--O9ME",
+  authDomain: "quiz-saude-clima.firebaseapp.com",
+  databaseURL: "https://quiz-saude-clima-default-rtdb.firebaseio.com",
+  projectId: "quiz-saude-clima",
+  storageBucket: "quiz-saude-clima.firebasestorage.app",
+  messagingSenderId: "442805740799",
+  appId: "1:442805740799:web:bbf5986c2a0e1221b158ca"
+};
+let db=null, firebaseOk=false;
+try{
+  if(!firebaseConfig.apiKey.startsWith("COLOQUE")){
+    firebase.initializeApp(firebaseConfig); db=firebase.database(); firebaseOk=true;
+  }
+}catch(e){ console.warn("Firebase nao iniciado:",e); }
+
+const PERGUNTAS = [
+  // ---------- BLOCO FOGO E AR ----------
+  {nivel:"facil",tema:"Queima de quintal",bloco:"fogo",
+   q:"Pensando no seu quintal: alguém junta folha seca e põe fogo. O que essa fumaça causa principalmente em quem está perto?",
+   correta:1,
+   explica:"A fumaça concentra partículas finas que entram fundo no pulmão. O efeito principal e comprovado é sobre a respiração: tosse, falta de ar e crises de asma e bronquite.",
+   ops:[
+     "Deixa a pele manchada por causa da fuligem que gruda no corpo",
+     "Irrita o pulmão e provoca tosse, falta de ar e crises de asma",
+     "Aumenta a pressão arterial por causa do cheiro forte da fumaça",
+     "Atrapalha a visão e causa tontura por algumas horas seguidas"]},
+  {nivel:"medio",tema:"Queima e clima",bloco:"fogo",
+   q:"Na sua cidade, por que as queimas de quintal ficam mais perigosas em anos de seca forte?",
+   correta:2,
+   explica:"Na estiagem a vegetação fica ressecada. O fogo que seria pequeno encontra material seco ao redor e escapa do controle com facilidade, atingindo terrenos e casas vizinhas.",
+   ops:[
+     "Porque a fumaça da seca é mais tóxica do que a fumaça da chuva",
+     "Porque o solo seco absorve o fogo e o devolve mais forte à noite",
+     "Porque a vegetação ressecada pega fogo fácil e as chamas escapam do controle",
+     "Porque na seca o fogo queima mais devagar e dura vários dias"]},
+  // ---------- BLOCO CIDADE VERDE ----------
+  {nivel:"facil",tema:"Praça arborizada",bloco:"verde",
+   q:"Pensando na praça do seu bairro num dia de calor: qual é o efeito direto das árvores sobre a saúde de quem está ali?",
+   correta:3,
+   explica:"A sombra das árvores baixa a temperatura embaixo delas em vários graus. Isso reduz o risco de mal-estar, insolação e desidratação em quem usa a praça no calor.",
+   ops:[
+     "As árvores eliminam por completo o risco de qualquer doença respiratória",
+     "As árvores espantam os mosquitos e por isso acabam com a dengue",
+     "As árvores deixam o ar mais úmido e por isso provocam mais gripes",
+     "A sombra baixa a temperatura e reduz o risco de insolação e mal-estar"]},
+  {nivel:"medio",tema:"Ilha de calor",bloco:"verde",
+   q:"Comparando duas ruas da sua cidade no mesmo horário, uma cheia de árvores e outra só de asfalto e concreto, o que acontece com a temperatura?",
+   correta:0,
+   explica:"Asfalto e concreto absorvem calor durante o dia e o devolvem ao ar. A rua sem árvores fica mais quente que a arborizada, fenômeno conhecido como ilha de calor.",
+   ops:[
+     "A rua de asfalto fica mais quente que a rua arborizada",
+     "As duas ruas ficam exatamente com a mesma temperatura",
+     "A rua de asfalto fica mais fria por refletir a luz do sol",
+     "A rua arborizada fica mais quente porque as árvores seguram o calor"]},
+  {nivel:"dificil",tema:"Lei e arborização",bloco:"verde",
+   q:"Sobre a responsabilidade de arborizar as ruas e praças da sua cidade, o que diz a legislação brasileira?",
+   correta:2,
+   explica:"O Estatuto da Cidade prevê que o planejamento urbano inclua áreas verdes, e o cuidado com a arborização de ruas e praças é atribuição do município, não de cada morador isolado.",
+   fonte:"Estatuto da Cidade, Lei Federal 10.257/2001; Plano Nacional de Arborização Urbana (MMA).",
+   ops:[
+     "É proibido plantar árvores em calçadas, isso cabe apenas ao morador",
+     "Nenhuma lei trata de árvores nas cidades, é decisão de cada vizinho",
+     "Cuidar da arborização das ruas e praças é uma atribuição do município",
+     "Somente o governo federal pode autorizar o plantio dentro das cidades"]},
+  {nivel:"medio",tema:"Incentivo verde",bloco:"verde",
+   q:"Em várias cidades do Brasil existe o chamado IPTU verde. O que um morador ganha com ele?",
+   correta:1,
+   explica:"O IPTU verde concede desconto no imposto a quem mantém práticas sustentáveis no imóvel, como conservar árvores ou captar água da chuva. O percentual muda conforme a cidade.",
+   fonte:"Programas municipais de IPTU verde (ex: São Paulo, Salvador, Belo Horizonte). Percentuais variam por município.",
+   ops:[
+     "Paga mais imposto se tiver árvores ocupando espaço no terreno",
+     "Ganha desconto no imposto por manter árvores ou captar água da chuva",
+     "Recebe do governo federal um valor em dinheiro todo mês",
+     "Fica isento de todos os impostos da casa por tempo indeterminado"]},
+  // ---------- BLOCO ÁGUA ----------
+  {nivel:"facil",tema:"Água e saúde",bloco:"agua",
+   q:"Pensando na água que chega na torneira da sua casa: por que ela passa por tratamento antes de chegar?",
+   correta:0,
+   explica:"O tratamento remove sujeira e elimina micro-organismos que causam doença. Sem isso, a água pode transmitir diarreia, hepatite e verminoses, sobretudo em crianças.",
+   ops:[
+     "Para eliminar micro-organismos que causam diarreia e outras doenças",
+     "Para deixar a água com um sabor mais agradável ao paladar",
+     "Para que a água hidrate mais o corpo do que a água sem tratamento",
+     "Para que a água dure mais tempo guardada na caixa sem estragar"]},
+  {nivel:"medio",tema:"Água e clima",bloco:"agua",
+   q:"Na sua cidade, como uma seca mais longa do que o normal tende a afetar o abastecimento de água?",
+   correta:3,
+   explica:"Na seca prolongada os rios e mananciais que abastecem a cidade baixam o nível. Com menos água na fonte, o abastecimento fica ameaçado e pode haver racionamento.",
+   ops:[
+     "Aumenta a água disponível, porque o calor traz mais chuva depois",
+     "Não muda nada, porque a água vem de reservas que nunca baixam",
+     "Melhora a qualidade da água, porque a seca limpa os rios",
+     "Reduz o nível dos rios e mananciais e ameaça o abastecimento"]},
+  // ---------- BLOCO SAÚDE E GESTÃO PÚBLICA ----------
+  {nivel:"medio",tema:"Doenças e clima",bloco:"gestao",
+   q:"Por que períodos mais quentes costumam aumentar os casos de dengue no seu bairro?",
+   correta:2,
+   explica:"O calor acelera o ciclo de vida do mosquito Aedes aegypti. Com água parada disponível, ele se reproduz mais rápido e em maior quantidade, elevando os casos de dengue.",
+   ops:[
+     "Porque o calor faz o vírus da dengue se espalhar pelo ar",
+     "Porque no calor as pessoas bebem menos água e adoecem",
+     "Porque o calor acelera a reprodução do mosquito da dengue",
+     "Porque o calor enfraquece os remédios usados contra a dengue"]},
+  {nivel:"dificil",tema:"Programa federal",bloco:"gestao",
+   q:"O Ministério da Saúde criou uma estratégia para preparar o SUS diante do calor extremo, das enchentes e da poluição do ar. Qual é o nome dela?",
+   correta:3,
+   explica:"O AdaptaSUS é a estratégia do Ministério da Saúde, dentro do Plano Clima do Brasil, para tornar o SUS mais preparado para os efeitos das mudanças climáticas na saúde.",
+   fonte:"Ministério da Saúde, AdaptaSUS, no âmbito do Plano Clima do Brasil.",
+   ops:[
+     "Bolsa Verde",
+     "Auxílio Clima",
+     "Mais Médicos",
+     "AdaptaSUS"]},
+  {nivel:"dificil",tema:"Programa federal",bloco:"gestao",
+   q:"Em 2025, na COP30 em Belém, o Brasil apresentou um plano internacional inédito. Sobre o que era esse plano?",
+   correta:1,
+   explica:"O Plano de Ação em Saúde de Belém foi o primeiro plano internacional voltado especificamente para o setor saúde, reunindo ações para proteger as pessoas dos riscos do clima.",
+   fonte:"Ministério da Saúde, Plano de Ação em Saúde de Belém, COP30, novembro de 2025.",
+   ops:[
+     "Era um plano para acabar com o desmatamento da Amazônia",
+     "Era um plano para preparar a saúde diante das mudanças do clima",
+     "Era um plano para construir novas hidrelétricas no país",
+     "Era um plano para substituir o SUS por um sistema novo"]},
+  {nivel:"dificil",tema:"Responsabilidade pública",bloco:"gestao",
+   q:"Quando falta arborização, saneamento e coleta de lixo num bairro, de quem é a principal responsabilidade de resolver?",
+   correta:0,
+   explica:"Esses serviços são políticas públicas de responsabilidade do município. O cuidado individual ajuda, mas não substitui a obrigação do poder público de garantir essa estrutura.",
+   ops:[
+     "Do poder público municipal, que responde por esses serviços",
+     "De cada morador, que deveria resolver por conta própria",
+     "De ninguém, pois esses problemas não têm solução possível",
+     "Apenas do governo federal, único que pode agir nos bairros"]}
+];
+
+const BLOCOS = {
+  fogo:  {nome:"Fogo e Ar",              sub:"Queimadas, fumaça e o ar que você respira", cor:"#e0463a", corEsc:"#b32d22", suave:"#fcebe9"},
+  verde: {nome:"Cidade Verde",           sub:"Árvores, praças, calor urbano e leis",      cor:"#1b9e54", corEsc:"#127a40", suave:"#e7f7ee"},
+  agua:  {nome:"Água",                   sub:"Qualidade, quantidade e saúde",             cor:"#1f7ae0", corEsc:"#175bab", suave:"#e6f0fc"},
+  gestao:{nome:"Saúde e Gestão Pública", sub:"Doenças, programas e responsabilidade",     cor:"#8a4fd6", corEsc:"#6a37ab", suave:"#f0e8fb"}
+};
+const ORDEM_BLOCOS=['fogo','verde','agua','gestao'];
+
+let nome="",idx=0,pontos=0,respondeu=false,detalhe=[];
+const app=document.getElementById('app');
+const params=new URLSearchParams(location.search);
+const modoPainel=params.get('painel')==='1';
+// Mentimeter: modo=menti (participante), modo=menti-telao (telão público), modo=menti-admin (apresentador)
+const modoMenti=params.get('modo');
+const ADMIN_CHAVE="clima2026";
+const chaveOk=(params.get('chave')===ADMIN_CHAVE);
+
+// Catálogo de municípios. Para adicionar um novo, basta incluir aqui (slug: nome).
+// Qualquer slug informado em ?cidade= funciona mesmo sem estar no catálogo.
+const CIDADES={
+  caceres:"Cáceres-MT",
+  araputanga:"Araputanga-MT",
+  "reserva-do-cabacal":"Reserva do Cabaçal-MT"
+};
+function normalizaSlug(s){
+  return (s||'').toLowerCase().trim()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+}
+const cidadeSlug=normalizaSlug(params.get('cidade'));
+const cidadeNome=cidadeSlug?(CIDADES[cidadeSlug]||(cidadeSlug.charAt(0).toUpperCase()+cidadeSlug.slice(1).replace(/-/g,' '))):"";
+// Cada município grava no seu próprio nó. Sem cidade definida, usa um nó genérico.
+const RKEY = cidadeSlug ? ('quiz_saude_clima/cidades/'+cidadeSlug) : 'quiz_saude_clima/geral';
+
+// Mantém ?cidade= ao gerar links/QR, descartando outros parâmetros (painel etc.)
+function urlBase(){
+  const u=location.href.split('?')[0];
+  return cidadeSlug ? (u+'?cidade='+cidadeSlug) : u;
+}
+function urlPainel(){
+  const sep = urlBase().includes('?') ? '&' : '?';
+  return urlBase()+sep+'painel=1';
+}
+
+function telaInicial(){
+  app.innerHTML=`
+    <div class="topo">
+      <span class="tag">Conferência Municipal de Saúde</span>
+      <h1>Saúde e Clima: quanto você sabe?</h1>
+      <p class="sub">Escolha por onde começar.${cidadeNome?' '+escapeHtml(cidadeNome)+'.':''}</p>
+    </div>
+    <div class="dois-cards">
+      <div class="card-grande card-g-quiz">
+        <div class="cg-icone">🧠</div>
+        <div class="cg-tit">Fazer o quiz</div>
+        <div class="cg-sub">12 perguntas sobre saúde e clima na sua cidade. Cada um responde no seu ritmo e descobre quanto sabe.</div>
+        <label for="nm" style="margin-top:14px">Seu nome ou apelido</label>
+        <input type="text" id="nm" placeholder="Ex: Maria S." maxlength="22" autocomplete="off">
+        <button class="btn btn-verde" id="comecar">Começar o quiz</button>
+      </div>
+      <div class="card-grande card-g-menti">
+        <div class="cg-icone">📊</div>
+        <div class="cg-tit">Sondagem ao vivo</div>
+        <div class="cg-sub">Perguntas rápidas conduzidas no telão. Responda e veja o resultado do grupo aparecer na hora.</div>
+        <button class="btn btn-menti" id="irmenti">Entrar na sondagem</button>
+      </div>
+    </div>
+    <div class="acoes-sec">
+      <button class="link-sec" id="verpainel">Ver resultados do grupo</button>
+      <button class="link-sec" id="abrirqr">QR codes do evento</button>
+    </div>
+    ${firebaseOk?'':'<div class="hint">Modo offline: resultados e sugestões desativados (Firebase não configurado).</div>'}
+    <div class="rodape">${cidadeNome?escapeHtml(cidadeNome):'Cáceres-MT'} · Saúde e mudanças climáticas</div>`;
+  const ir=()=>{
+    const v=document.getElementById('nm').value.trim();
+    if(!v){document.getElementById('nm').focus();return;}
+    nome=v;idx=0;pontos=0;detalhe=[];irPara(0);
+  };
+  document.getElementById('comecar').onclick=ir;
+  document.getElementById('nm').addEventListener('keydown',e=>{if(e.key==='Enter')ir();});
+  document.getElementById('irmenti').onclick=()=>{ location.href=mentiUrl('menti'); };
+  document.getElementById('verpainel').onclick=telaPainel;
+  document.getElementById('abrirqr').onclick=telaQR;
+}
+
+function telaEscolheCidade(){
+  const botoes=Object.entries(CIDADES).map(([slug,nome])=>
+    `<a class="btn btn-verde" style="text-decoration:none;text-align:center" href="${location.href.split('?')[0]}?cidade=${slug}">${escapeHtml(nome)}</a>`
+  ).join('');
+  app.innerHTML=`
+    <div class="topo">
+      <span class="tag">Conferência Municipal de Saúde</span>
+      <h1>Saúde e Clima: quanto você sabe?</h1>
+      <p class="sub">Escolha o seu município para começar. Cada cidade tem o seu próprio quiz e os seus próprios resultados.</p>
+    </div>
+    <div class="card">
+      <label>Selecione o município</label>
+      ${botoes}
+    </div>
+    <div class="rodape">Saúde e mudanças climáticas</div>`;
+}
+
+function telaQR(){
+  app.innerHTML=`
+    <div class="topo"><span class="tag">QR codes do evento</span><h1>Aponte a câmera</h1>
+    <p class="sub">Cada momento tem o seu QR. Projete ou imprima o que for usar.</p></div>
+
+    <div class="card" style="border-top:6px solid #8a4fd6">
+      <div class="qr-tit" style="color:#6a37ab">📊 Sondagem ao vivo</div>
+      <p class="hint" style="text-align:center;margin:0 0 10px">Use no momento da sondagem, com o telão ligado.</p>
+      <div id="qrSond" style="display:flex;justify-content:center"></div>
+      <div class="url-mini">${mentiUrl('menti')}</div>
+    </div>
+
+    <div class="card" style="border-top:6px solid #1b9e54">
+      <div class="qr-tit" style="color:#127a40">🧠 Quiz</div>
+      <p class="hint" style="text-align:center;margin:0 0 10px">Use no momento do quiz. Cada pessoa responde no seu ritmo.</p>
+      <div id="qrQuiz" style="display:flex;justify-content:center"></div>
+      <div class="url-mini">${urlBase()}</div>
+    </div>
+
+    <div class="card">
+      <div class="qr-tit" style="color:#1d2630;font-size:15px">Links só para você (organização)</div>
+      <p class="hint" style="text-align:left;margin-top:8px"><b>Telão da sondagem</b> (projetar): <span class="url-mini" style="text-align:left">${mentiUrl('menti-telao')}</span></p>
+      <p class="hint" style="text-align:left"><b>Controle da sondagem</b> (no seu celular): <span class="url-mini" style="text-align:left">${mentiUrl('menti-admin')}&chave=${ADMIN_CHAVE}</span></p>
+      <p class="hint" style="text-align:left"><b>Painel de resultados do quiz</b> (projetar): <span class="url-mini" style="text-align:left">${urlPainel()}</span></p>
+    </div>
+
+    <button class="btn btn-claro" id="voltar">Voltar</button>`;
+  try{ new QRCode(document.getElementById('qrSond'),{text:mentiUrl('menti'),width:200,height:200,colorDark:"#6a37ab",colorLight:"#ffffff"}); }catch(e){}
+  try{ new QRCode(document.getElementById('qrQuiz'),{text:urlBase(),width:200,height:200,colorDark:"#127a40",colorLight:"#ffffff"}); }catch(e){}
+  document.getElementById('voltar').onclick=telaInicial;
+}
+
+function irPara(novoIdx){
+  // mostra intro do bloco quando entra num bloco novo (ou no primeiro)
+  if(novoIdx>=PERGUNTAS.length){telaFinal();return;}
+  const blocoAtual = PERGUNTAS[novoIdx].bloco;
+  const blocoAnterior = novoIdx>0 ? PERGUNTAS[novoIdx-1].bloco : null;
+  if(blocoAtual!==blocoAnterior){ idx=novoIdx; telaIntroBloco(); }
+  else { idx=novoIdx; telaPergunta(); }
+}
+
+function telaIntroBloco(){
+  const b=BLOCOS[PERGUNTAS[idx].bloco];
+  const numBloco=ORDEM_BLOCOS.indexOf(PERGUNTAS[idx].bloco)+1;
+  const qtd=PERGUNTAS.filter(p=>p.bloco===PERGUNTAS[idx].bloco).length;
+  app.innerHTML=`
+    <div class="card bloco" style="--bcor:${b.cor};--bcoresc:${b.corEsc};--bsuave:${b.suave}">
+      <div class="intro-bloco" style="--bcor:${b.cor}">
+        <div class="num">Bloco ${numBloco} de ${ORDEM_BLOCOS.length}</div>
+        <h2>${b.nome}</h2>
+        <p>${b.sub}</p>
+        <div class="qtd">${qtd} ${qtd===1?'pergunta':'perguntas'}</div>
+      </div>
+      <button class="btn btn-bloco" id="iniciarbloco" style="--bcor:${b.cor}">Começar este bloco</button>
+    </div>
+    <div class="rodape">Pontos: ${pontos}</div>`;
+  document.getElementById('iniciarbloco').onclick=telaPergunta;
+}
+
+function telaPergunta(){
+  respondeu=false;
+  const p=PERGUNTAS[idx];
+  const b=BLOCOS[p.bloco];
+  const pct=Math.round((idx/PERGUNTAS.length)*100);
+  const nivelTxt={facil:"Fácil",medio:"Médio",dificil:"Difícil"}[p.nivel];
+  app.innerHTML=`
+    <div class="card bloco" style="--bcor:${b.cor};--bcoresc:${b.corEsc};--bsuave:${b.suave}">
+      <div class="progresso">
+        <span class="bloco-chip" style="--bcor:${b.cor}">${b.nome}</span>
+        <span class="nivel n-${p.nivel}">${nivelTxt}</span>
+      </div>
+      <div class="barra"><span class="bfill" style="--bcor:${b.cor};width:${pct}%"></span></div>
+      <p class="pergunta" style="margin-top:16px">${p.q}</p>
+      <div class="opcoes" id="ops"></div>
+      <div class="explica bexp" id="exp" style="--bcor:${b.cor};--bcoresc:${b.corEsc}"></div>
+      <button class="btn btn-bloco" id="prox" style="--bcor:${b.cor};display:none">${idx+1<PERGUNTAS.length?'Próxima':'Ver meu resultado'}</button>
+    </div>
+    <div class="rodape">Pergunta ${idx+1} de ${PERGUNTAS.length} · Pontos: ${pontos}</div>`;
+  const cont=document.getElementById('ops');
+  p.ops.forEach((txt,i)=>{
+    const btn=document.createElement('button');
+    btn.className='opcao';btn.textContent=txt;
+    btn.onclick=()=>responder(i,btn);cont.appendChild(btn);
+  });
+}
+
+function responder(i,btn){
+  if(respondeu)return;respondeu=true;
+  const p=PERGUNTAS[idx];
+  [...document.querySelectorAll('.opcao')].forEach((b,j)=>{
+    b.classList.add('bloqueada');
+    if(j===p.correta){b.classList.add('certa');b.classList.add('bsel');}
+    else if(j===i)b.classList.add('errada');
+    else b.classList.add('atenuada');
+  });
+  const acertou = (i===p.correta);
+  if(acertou)pontos++;
+  detalhe.push({nivel:p.nivel,tema:p.tema,bloco:p.bloco,acertou:acertou});
+  const exp=document.getElementById('exp');
+  exp.innerHTML=(acertou?'<b>Correto.</b> ':'<b>A resposta certa está destacada.</b> ')+p.explica+
+    (p.fonte?`<span class="fonte">Fonte: ${p.fonte}</span>`:'');
+  exp.classList.add('show');
+  const prox=document.getElementById('prox');
+  prox.style.display='block';
+  prox.onclick=()=>irPara(idx+1);
+}
+
+function faixa(p){
+  const r=p/PERGUNTAS.length;
+  if(r>=0.85)return{txt:"Você manja muito de saúde e clima",cor:"var(--verde-esc)"};
+  if(r>=0.6)return{txt:"Bom conhecimento, dá pra ir além",cor:"var(--azul)"};
+  if(r>=0.4)return{txt:"Você sabe o básico, vale aprofundar",cor:"var(--laranja)"};
+  return{txt:"Tema novo pra você, ótima hora de aprender",cor:"var(--vermelho)"};
+}
+
+function telaFinal(){
+  const f=faixa(pontos);
+  const meuPct=Math.round(pontos/PERGUNTAS.length*100);
+  app.innerHTML=`
+    <div class="card placar-final">
+      <span class="tag" style="background:var(--suave);color:var(--verde-esc);padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600">Seu resultado</span>
+      <div class="nota">${pontos}/${PERGUNTAS.length}</div>
+      <div class="faixa" style="color:${f.cor}">${f.txt}</div>
+      <p class="sub" style="margin-top:6px">${escapeHtml(nome)}, obrigado por participar.</p>
+      <div id="salvomsg" class="hint"></div>
+    </div>
+    <div class="card">
+      <div class="secao-tit" style="margin-top:0">Você e o grupo</div>
+      <div class="comp-linha">
+        <div class="comp-box"><div class="comp-v" style="color:var(--verde-esc)">${meuPct}%</div><div class="comp-l">seu acerto</div></div>
+        <div class="comp-box"><div class="comp-v" id="grupoPct" style="color:var(--azul)">--</div><div class="comp-l">média do grupo</div></div>
+        <div class="comp-box"><div class="comp-v" id="grupoN" style="color:var(--cinza)">--</div><div class="comp-l">participantes</div></div>
+      </div>
+      <div id="compMsg" class="hint" style="text-align:left"></div>
+    </div>
+    <div class="card">
+      <label for="sug">Deixe uma sugestão para a conferência (opcional)</label>
+      <textarea id="sug" maxlength="280" placeholder="Ex: mais árvores na praça do meu bairro, limpeza dos córregos..."></textarea>
+      <button class="btn btn-azul" id="enviarsug">Enviar sugestão</button>
+      <div id="sugmsg" class="hint"></div>
+    </div>
+    <button class="btn btn-claro" id="verpainel">Ver resultados do grupo</button>
+    <button class="btn btn-verde" id="dnovo">Jogar de novo</button>
+    <div class="rodape">Conferência Municipal de Saúde${cidadeNome?(' · '+escapeHtml(cidadeNome)):''}</div>`;
+  document.getElementById('dnovo').onclick=telaInicial;
+  document.getElementById('verpainel').onclick=telaPainel;
+  document.getElementById('enviarsug').onclick=enviarSugestao;
+  if(firebaseOk)salvarResultado();
+  else { document.getElementById('salvomsg').textContent='Modo offline: resultado não registrado.';
+         document.getElementById('compMsg').textContent='Sem conexão, não dá para comparar com o grupo.'; }
+}
+
+function mostrarComparacao(){
+  const max=PERGUNTAS.length;
+  db.ref(RKEY+'/participantes').once('value',snap=>{
+    const arr=[];snap.forEach(c=>arr.push(c.val()));
+    const n=arr.length;
+    if(!n){return;}
+    const mediaPct=Math.round(arr.reduce((s,p)=>s+p.pontos,0)/n/max*100);
+    const meuPct=Math.round(pontos/max*100);
+    const gp=document.getElementById('grupoPct'), gn=document.getElementById('grupoN'), msg=document.getElementById('compMsg');
+    if(gp)gp.textContent=mediaPct+'%';
+    if(gn)gn.textContent=n;
+    if(msg){
+      if(n===1) msg.textContent='Você é a primeira pessoa a participar. Conforme mais gente responde, a média do grupo aparece aqui.';
+      else if(meuPct>mediaPct) msg.textContent='Você acertou acima da média do grupo.';
+      else if(meuPct<mediaPct) msg.textContent='Você ficou abaixo da média do grupo, vale revisar os temas.';
+      else msg.textContent='Você acertou exatamente na média do grupo.';
+    }
+  });
+}
+
+function salvarResultado(){
+  const porNivel={facil:{a:0,t:0},medio:{a:0,t:0},dificil:{a:0,t:0}};
+  const porTema={};
+  const porBloco={};
+  detalhe.forEach(d=>{
+    porNivel[d.nivel].t++; if(d.acertou)porNivel[d.nivel].a++;
+    if(!porTema[d.tema])porTema[d.tema]={a:0,t:0};
+    porTema[d.tema].t++; if(d.acertou)porTema[d.tema].a++;
+    if(!porBloco[d.bloco])porBloco[d.bloco]={a:0,t:0};
+    porBloco[d.bloco].t++; if(d.acertou)porBloco[d.bloco].a++;
+  });
+  db.ref(RKEY+'/participantes').push({nome:nome,pontos:pontos,total:PERGUNTAS.length,nivel:porNivel,tema:porTema,bloco:porBloco,ts:Date.now()})
+    .then(()=>{document.getElementById('salvomsg').textContent='Seu resultado entrou nas estatísticas do grupo.';mostrarComparacao();})
+    .catch(()=>{document.getElementById('salvomsg').textContent='Não foi possível registrar agora.';});
+}
+
+function enviarSugestao(){
+  const t=document.getElementById('sug').value.trim();
+  if(!t){document.getElementById('sug').focus();return;}
+  if(!firebaseOk){document.getElementById('sugmsg').textContent='Modo offline: sugestão não enviada.';return;}
+  db.ref(RKEY+'/sugestoes').push({nome:nome,texto:t,ts:Date.now()})
+    .then(()=>{document.getElementById('sug').value='';document.getElementById('sugmsg').textContent='Sugestão enviada. Obrigado!';
+      document.getElementById('enviarsug').disabled=true;})
+    .catch(()=>{document.getElementById('sugmsg').textContent='Não foi possível enviar agora.';});
+}
+
+function telaPainel(){
+  app.innerHTML=`
+    <div class="topo"><span class="tag">Resultados do evento</span>
+      <h1>Saúde e Clima${cidadeNome?(' em '+escapeHtml(cidadeNome)):''}</h1>
+      <p class="sub">Atualiza sozinho conforme as pessoas participam.</p></div>
+    <div class="card" id="boxstats"><div class="hint">Carregando...</div></div>
+    <div class="card"><div class="secao-tit">Desempenho por bloco</div>
+      <p class="hint" style="text-align:left;margin:2px 0 0">Percentual médio de acerto em cada bloco temático.</p>
+      <div id="boxblocos"></div></div>
+    <div class="card"><div class="secao-tit">Acertos por nível de dificuldade</div>
+      <p class="hint" style="text-align:left;margin:2px 0 0">Percentual médio de acerto em cada nível.</p>
+      <div id="boxniveis"></div></div>
+    <div class="card"><div class="secao-tit">Conhecimento por tema</div>
+      <p class="hint" style="text-align:left;margin:2px 0 0">Onde o público está mais forte e onde precisa de atenção.</p>
+      <div id="boxtemas"></div></div>
+    <div class="card"><div class="secao-tit">Distribuição das notas</div>
+      <p class="hint" style="text-align:left;margin:2px 0 0">Quantas pessoas tiraram cada nota, de 0 a ${PERGUNTAS.length}.</p>
+      <div class="grafico" id="boxgraf"></div></div>
+    <div class="card"><div class="secao-tit">Nuvem de sugestões</div>
+      <div class="nuvem" id="boxnuvem"></div>
+      <div class="secao-tit" style="margin-top:18px">Mural de sugestões</div>
+      <div id="boxsug"></div></div>
+    ${modoPainel?'':'<button class="btn btn-claro" id="voltar">Voltar ao início</button>'}
+    <div class="rodape">Conferência Municipal de Saúde${cidadeNome?(' · '+escapeHtml(cidadeNome)):''}</div>`;
+  if(!modoPainel)document.getElementById('voltar').onclick=telaInicial;
+  if(!firebaseOk){
+    document.getElementById('boxstats').innerHTML='<div class="erro-cfg">Configure o Firebase para ver os resultados do evento.</div>';
+    return;
+  }
+  db.ref(RKEY+'/participantes').on('value',snap=>{
+    const arr=[];snap.forEach(c=>arr.push(c.val()));
+    renderStats(arr);renderBlocos(arr);renderNiveis(arr);renderTemas(arr);renderGrafico(arr);
+  });
+  db.ref(RKEY+'/sugestoes').on('value',snap=>{
+    const arr=[];snap.forEach(c=>arr.push(c.val()));
+    renderNuvem(arr);renderSugestoes(arr);
+  });
+}
+
+function renderStats(arr){
+  const n=arr.length;
+  const max=PERGUNTAS.length;
+  const media=n?(arr.reduce((s,p)=>s+p.pontos,0)/n):0;
+  const bons=arr.filter(p=>p.pontos/max>=0.6).length;
+  const pctMedio=n?Math.round(media/max*100):0;
+  const aviso = n===1 ? '<div class="hint" style="margin-top:12px">Apenas 1 participante até agora. Os percentuais refletem essa única pessoa e vão se ajustar conforme o grupo cresce.</div>' : (n===0?'<div class="hint" style="margin-top:12px">Ainda sem participantes.</div>':'');
+  document.getElementById('boxstats').innerHTML=`
+    <div class="stat-linha">
+      <div class="stat"><div class="v">${n}</div><div class="l">participantes</div></div>
+      <div class="stat"><div class="v">${pctMedio}%</div><div class="l">acerto médio do grupo</div></div>
+      <div class="stat"><div class="v">${n?Math.round(bons/n*100):0}%</div><div class="l">acertaram 60%+</div></div>
+    </div>${aviso}`;
+}
+
+function renderBlocos(arr){
+  const ac={};
+  ORDEM_BLOCOS.forEach(k=>ac[k]={a:0,t:0});
+  arr.forEach(p=>{
+    if(!p.bloco)return;
+    Object.keys(p.bloco).forEach(k=>{
+      if(!ac[k])ac[k]={a:0,t:0};
+      ac[k].a+=p.bloco[k].a||0;ac[k].t+=p.bloco[k].t||0;
+    });
+  });
+  const html=ORDEM_BLOCOS.map(k=>{
+    const b=BLOCOS[k];const v=ac[k];
+    const pc=v.t?Math.round(v.a/v.t*100):0;
+    return `<div class="bloco-result" style="--bcor:${b.cor};--bsuave:${b.suave};--bcoresc:${b.corEsc}">
+      <div class="br-topo"><span class="br-nome">${b.nome}</span><span class="br-pc">${pc}%</span></div>
+      <div class="br-trilho"><div class="br-fill" style="width:${pc}%"></div></div>
+      <div class="br-det">${v.a} de ${v.t} acertos</div>
+    </div>`;
+  }).join('');
+  document.getElementById('boxblocos').innerHTML=html;
+}
+
+function renderNiveis(arr){
+  const ac={facil:{a:0,t:0},medio:{a:0,t:0},dificil:{a:0,t:0}};
+  arr.forEach(p=>{
+    if(!p.nivel)return;
+    ['facil','medio','dificil'].forEach(k=>{
+      if(p.nivel[k]){ac[k].a+=p.nivel[k].a||0;ac[k].t+=p.nivel[k].t||0;}
+    });
+  });
+  const pc=k=>ac[k].t?Math.round(ac[k].a/ac[k].t*100):0;
+  document.getElementById('boxniveis').innerHTML=`
+    <div class="nivel-grid">
+      <div class="nivel-box b"><div class="pc">${pc('facil')}%</div><div class="nm">Básico</div><div class="det">${ac.facil.a}/${ac.facil.t} acertos</div></div>
+      <div class="nivel-box m"><div class="pc">${pc('medio')}%</div><div class="nm">Médio</div><div class="det">${ac.medio.a}/${ac.medio.t} acertos</div></div>
+      <div class="nivel-box av"><div class="pc">${pc('dificil')}%</div><div class="nm">Avançado</div><div class="det">${ac.dificil.a}/${ac.dificil.t} acertos</div></div>
+    </div>`;
+}
+
+function corPct(p){ if(p>=70)return'#1b9e54'; if(p>=45)return'#f0a830'; return'#e0463a'; }
+function renderTemas(arr){
+  const ac={};
+  arr.forEach(p=>{
+    if(!p.tema)return;
+    Object.keys(p.tema).forEach(k=>{
+      if(!ac[k])ac[k]={a:0,t:0};
+      ac[k].a+=p.tema[k].a||0;ac[k].t+=p.tema[k].t||0;
+    });
+  });
+  const linhas=Object.entries(ac).map(([k,v])=>({tema:k,pc:v.t?Math.round(v.a/v.t*100):0,a:v.a,t:v.t}))
+    .sort((a,b)=>b.pc-a.pc);
+  if(!linhas.length){document.getElementById('boxtemas').innerHTML='<div class="hint">Sem dados ainda.</div>';return;}
+  document.getElementById('boxtemas').innerHTML=linhas.map(l=>`
+    <div class="tema-linha">
+      <div class="tema-topo"><span class="tt">${escapeHtml(l.tema)}</span><span class="tp">${l.pc}%</span></div>
+      <div class="tema-trilho"><div class="tema-fill" style="width:${l.pc}%;background:${corPct(l.pc)}"></div></div>
+    </div>`).join('');
+}
+
+function renderGrafico(arr){
+  const max=PERGUNTAS.length;
+  const cont=Array(max+1).fill(0);
+  arr.forEach(p=>{if(p.pontos>=0&&p.pontos<=max)cont[p.pontos]++;});
+  const maior=Math.max(1,...cont);
+  let html='';
+  for(let i=max;i>=0;i--){
+    const w=Math.round(cont[i]/maior*100);
+    html+=`<div class="gbar-linha"><div class="gbar-rot">${i}/${max}</div>
+      <div class="gbar-trilho"><div class="gbar-fill" style="width:${w}%"></div></div>
+      <div class="gbar-num">${cont[i]}</div></div>`;
+  }
+  document.getElementById('boxgraf').innerHTML=html||'<div class="hint">Sem dados ainda.</div>';
+}
+
+const STOP=new Set(['a','o','as','os','de','da','do','das','dos','e','em','no','na','nos','nas','um','uma','para','pra','por','com','que','mais','meu','minha','se','ao','aos','é','the','of','sua','seu','tem','ter','muito','isso','esse','essa','mas','não','nao','só','sao','são','dos','nas','como','onde','quando','também','tambem','toda','todo','todas','todos','ser','estar','foi','tão','tao','até','ate','sem','sobre']);
+function renderNuvem(arr){
+  // conta cada palavra UMA vez por sugestão, para uma pessoa não inflar um termo repetindo-o
+  const freq={};
+  arr.forEach(s=>{
+    const vistas=new Set();
+    (s.texto||'').toLowerCase().replace(/[.,;:!?()"]/g,' ').split(/\s+/).forEach(w=>{
+      w=w.trim();
+      if(w.length>=4 && !STOP.has(w)) vistas.add(w);
+    });
+    vistas.forEach(w=>{freq[w]=(freq[w]||0)+1;});
+  });
+  const pares=Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,30);
+  if(!pares.length){document.getElementById('boxnuvem').innerHTML='<div class="hint">Sem sugestões ainda.</div>';return;}
+  const maxf=pares[0][1];
+  const minf=pares[pares.length-1][1];
+  document.getElementById('boxnuvem').innerHTML=pares.map(([w,f])=>{
+    // só varia o tamanho quando há diferença real de frequência entre as palavras
+    let t;
+    if(maxf===minf) t=0;                       // todas iguais: tamanho uniforme
+    else t=(f-minf)/(maxf-minf);               // normaliza 0..1
+    const size=17+Math.round(t*17);            // 17px a 34px, faixa mais suave
+    const op=0.7+0.3*t;
+    return `<span style="font-size:${size}px;opacity:${op.toFixed(2)}">${escapeHtml(w)} <span style="font-size:11px;opacity:.6;font-weight:400">${f>1?'('+f+')':''}</span></span>`;
+  }).join('');
+}
+
+function renderSugestoes(arr){
+  const ord=arr.slice().sort((a,b)=>b.ts-a.ts).slice(0,40);
+  if(!ord.length){document.getElementById('boxsug').innerHTML='<div class="hint">Sem sugestões ainda.</div>';return;}
+  document.getElementById('boxsug').innerHTML=ord.map(s=>
+    `<div class="sugcard">${escapeHtml(s.texto)}<span class="fonte">— ${escapeHtml(s.nome||'anônimo')}</span></div>`).join('');
+}
+
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+/* ============================================================
+   MENTIMETER  -  sondagem antes do quiz
+   5 perguntas, cada uma com um tipo de visualizacao:
+   1 nuvem  2 pizza  3 barras  4 escala  5 radar
+   Estado compartilhado em Firebase: nó /mentimeter
+     - /ativa : indice da pergunta no ar (controlado pelo apresentador)
+     - /respostas/<i>/<pushid> : respostas dos participantes
+   ============================================================ */
+const MENTI_RKEY = (cidadeSlug ? ('quiz_saude_clima/cidades/'+cidadeSlug) : 'quiz_saude_clima/geral')+'/mentimeter';
+
+const MENTI=[
+  { tipo:"nuvem", cor:"#8a4fd6",
+    q:"Quando você ouve as palavras MUDANÇA CLIMÁTICA, qual a primeira palavra que vem à cabeça?",
+    ajuda:"Escreva uma palavra só." },
+  { tipo:"pizza", cor:"#1f7ae0",
+    q:"Você já sentiu na pele algum efeito do clima mudando?",
+    opcoes:["Sim, com certeza","Acho que sim","Não","Não sei dizer"],
+    cores:["#1b9e54","#7ac77f","#f0a830","#bcc4cc"] },
+  { tipo:"barras", cor:"#e0463a",
+    q:"Na sua região, o que mais mudou no clima nos últimos anos?",
+    opcoes:["Calor mais forte","Secas mais longas","Chuvas mais intensas","Mais queimadas e fumaça"],
+    cores:["#e0463a","#f0a830","#1f7ae0","#8a4fd6"] },
+  { tipo:"escala", cor:"#127a40",
+    q:"De 0 a 10, quanto você sente que entende sobre mudanças climáticas?",
+    min:0, max:10 },
+  { tipo:"radar", cor:"#0f9b8e",
+    q:"Quanto cada tema abaixo te preocupa? (0 = nada, 5 = muito)",
+    eixos:["Calor","Água","Saúde","Queimadas","Comida"], min:0, max:5 }
+];
+
+let mIdx=0;        // pergunta ativa (espelha o Firebase)
+let mRespondi={};  // {indice: true} para nao deixar responder 2x no mesmo aparelho
+
+function mentiUrl(modo){
+  const u=location.href.split('?')[0];
+  const c=cidadeSlug?('&cidade='+cidadeSlug):'';
+  return u+'?modo='+modo+c;
+}
+
+/* ---------- PARTICIPANTE ---------- */
+function mentiParticipante(){
+  if(!firebaseOk){ app.innerHTML='<div class="wrap"><div class="card"><div class="erro-cfg">Firebase não configurado.</div></div></div>'; return; }
+  db.ref(MENTI_RKEY+'/ativa').on('value',s=>{
+    const a=s.val(); mIdx=(a===null||a===undefined)?-1:a;
+    desenhaParticipante();
+  });
+}
+function desenhaParticipante(){
+  if(mIdx<0){
+    app.innerHTML=`<div class="topo"><span class="tag">Aguarde</span><h1>Logo começamos</h1>
+      <p class="sub">O apresentador vai liberar a primeira pergunta. Deixe esta tela aberta.</p></div>`;
+    return;
+  }
+  const m=MENTI[mIdx];
+  if(mRespondi[mIdx]){
+    app.innerHTML=`<div class="topo"><span class="tag" style="background:${m.cor};color:#fff">Resposta enviada</span>
+      <h1>Obrigado!</h1><p class="sub">Acompanhe o resultado no telão. Aguarde a próxima pergunta.</p></div>`;
+    return;
+  }
+  let corpo='';
+  if(m.tipo==='nuvem'){
+    corpo=`<input type="text" id="mword" maxlength="24" placeholder="uma palavra" autocomplete="off">
+      <button class="btn" style="background:${m.cor};color:#fff" id="menvia">Enviar</button>`;
+  } else if(m.tipo==='pizza'||m.tipo==='barras'){
+    corpo=m.opcoes.map((o,i)=>`<button class="opcao mopt" data-i="${i}">${escapeHtml(o)}</button>`).join('');
+  } else if(m.tipo==='escala'){
+    corpo=`<div class="escala-val" id="mval">${Math.round((m.min+m.max)/2)}</div>
+      <input type="range" id="mrange" min="${m.min}" max="${m.max}" value="${Math.round((m.min+m.max)/2)}" step="1" style="width:100%">
+      <div class="escala-ext"><span>${m.min}</span><span>${m.max}</span></div>
+      <button class="btn" style="background:${m.cor};color:#fff" id="menvia">Enviar</button>`;
+  } else if(m.tipo==='radar'){
+    corpo=m.eixos.map((e,i)=>`<div class="radar-item">
+        <div class="radar-rot">${escapeHtml(e)}</div>
+        <input type="range" class="reixo" data-i="${i}" min="${m.min}" max="${m.max}" value="0" step="1">
+        <div class="radar-num" id="rn${i}">0</div></div>`).join('')+
+      `<button class="btn" style="background:${m.cor};color:#fff" id="menvia">Enviar</button>`;
+  }
+  app.innerHTML=`
+    <div class="card" style="border-top:6px solid ${m.cor}">
+      <div class="progresso"><span class="bloco-chip" style="--bcor:${m.cor}">Pergunta ${mIdx+1} de ${MENTI.length}</span></div>
+      <p class="pergunta" style="margin-top:14px">${escapeHtml(m.q)}</p>
+      ${m.ajuda?`<p class="hint" style="text-align:left;margin-top:-8px">${escapeHtml(m.ajuda)}</p>`:''}
+      <div class="opcoes" id="mcorpo">${corpo}</div>
+    </div>`;
+  ligaParticipante(m);
+}
+function ligaParticipante(m){
+  const enviar=(valor)=>{
+    db.ref(MENTI_RKEY+'/respostas/'+mIdx).push({v:valor,ts:Date.now()})
+      .then(()=>{mRespondi[mIdx]=true;desenhaParticipante();})
+      .catch(()=>{});
+  };
+  if(m.tipo==='nuvem'){
+    document.getElementById('menvia').onclick=()=>{
+      const w=(document.getElementById('mword').value||'').trim();
+      if(!w)return; enviar(w.toLowerCase());
+    };
+  } else if(m.tipo==='pizza'||m.tipo==='barras'){
+    [...document.querySelectorAll('.mopt')].forEach(b=>b.onclick=()=>enviar(parseInt(b.dataset.i)));
+  } else if(m.tipo==='escala'){
+    const r=document.getElementById('mrange'),v=document.getElementById('mval');
+    r.oninput=()=>v.textContent=r.value;
+    document.getElementById('menvia').onclick=()=>enviar(parseInt(r.value));
+  } else if(m.tipo==='radar'){
+    [...document.querySelectorAll('.reixo')].forEach(r=>r.oninput=()=>{document.getElementById('rn'+r.dataset.i).textContent=r.value;});
+    document.getElementById('menvia').onclick=()=>{
+      const vals=m.eixos.map((e,i)=>parseInt(document.querySelector('.reixo[data-i="'+i+'"]').value)||0);
+      enviar(vals);
+    };
+  }
+}
+
+/* ---------- TELÃO (resultados ao vivo) ---------- */
+function mentiTelao(){
+  if(!firebaseOk){ app.innerHTML='<div class="wrap"><div class="card"><div class="erro-cfg">Firebase não configurado.</div></div></div>'; return; }
+  db.ref(MENTI_RKEY+'/ativa').on('value',s=>{
+    const a=s.val(); mIdx=(a===null||a===undefined)?-1:a;
+    desenhaTelaoBase();
+    escutaRespostasTelao();
+  });
+}
+let _unsubResp=null;
+function escutaRespostasTelao(){
+  if(mIdx<0)return;
+  db.ref(MENTI_RKEY+'/respostas/'+mIdx).on('value',s=>{
+    const arr=[]; s.forEach(c=>arr.push(c.val().v));
+    desenhaResultado(arr);
+  });
+}
+function desenhaTelaoBase(){
+  if(mIdx<0){
+    app.innerHTML=`<div class="topo"><span class="tag">Mentimeter</span><h1>Saúde e Clima</h1>
+      <p class="sub">Aguardando o apresentador liberar a primeira pergunta.</p></div>`;
+    return;
+  }
+  const m=MENTI[mIdx];
+  app.innerHTML=`
+    <div class="topo"><span class="tag" style="background:${m.cor};color:#fff">Pergunta ${mIdx+1} de ${MENTI.length}</span>
+      <h1 style="color:${m.cor}">${escapeHtml(m.q)}</h1></div>
+    <div class="card" style="border-top:6px solid ${m.cor}"><div id="mresult"><div class="hint">Aguardando respostas...</div></div></div>`;
+}
+function desenhaResultado(arr){
+  const box=document.getElementById('mresult'); if(!box)return;
+  const m=MENTI[mIdx];
+  if(!arr.length){ box.innerHTML='<div class="hint">Aguardando respostas...</div>'; return; }
+  if(m.tipo==='nuvem') box.innerHTML=vizNuvem(arr);
+  else if(m.tipo==='pizza') box.innerHTML=vizPizza(arr,m);
+  else if(m.tipo==='barras') box.innerHTML=vizBarras(arr,m);
+  else if(m.tipo==='escala') box.innerHTML=vizEscala(arr,m);
+  else if(m.tipo==='radar') box.innerHTML=vizRadar(arr,m);
+}
+
+/* ---------- VISUALIZAÇÕES (SVG puro, sem libs) ---------- */
+function vizNuvem(arr){
+  const freq={};
+  arr.forEach(w=>{ w=String(w).trim().toLowerCase(); if(w)freq[w]=(freq[w]||0)+1; });
+  const pares=Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,40);
+  const maxf=pares[0][1], minf=pares[pares.length-1][1];
+  const cores=["#8a4fd6","#1f7ae0","#1b9e54","#e0463a","#f0a830","#0f9b8e"];
+  const palavras=pares.map(([w,f],k)=>{
+    const t=maxf===minf?0.5:(f-minf)/(maxf-minf);
+    const size=20+Math.round(t*44);
+    return `<span style="font-size:${size}px;color:${cores[k%cores.length]};font-weight:700;line-height:1.1">${escapeHtml(w)}</span>`;
+  }).join(' ');
+  return `<div style="font-size:13px;color:var(--cinza);margin-bottom:10px">${arr.length} respostas</div>
+    <div class="menti-nuvem">${palavras}</div>`;
+}
+function vizBarras(arr,m){
+  const cont=m.opcoes.map(()=>0);
+  arr.forEach(v=>{ if(v>=0&&v<cont.length)cont[v]++; });
+  const total=arr.length, maior=Math.max(1,...cont);
+  const linhas=m.opcoes.map((o,i)=>{
+    const w=Math.round(cont[i]/maior*100);
+    const pc=total?Math.round(cont[i]/total*100):0;
+    return `<div class="mb-linha"><div class="mb-rot">${escapeHtml(o)}</div>
+      <div class="mb-trilho"><div class="mb-fill" style="width:${w}%;background:${m.cores[i]}"></div></div>
+      <div class="mb-num">${cont[i]} · ${pc}%</div></div>`;
+  }).join('');
+  return `<div style="font-size:13px;color:var(--cinza);margin-bottom:10px">${total} respostas</div>${linhas}`;
+}
+function vizPizza(arr,m){
+  const cont=m.opcoes.map(()=>0);
+  arr.forEach(v=>{ if(v>=0&&v<cont.length)cont[v]++; });
+  const total=arr.length||1;
+  let ang=-90, fatias='';
+  const cx=130,cy=130,r=110;
+  m.opcoes.forEach((o,i)=>{
+    const frac=cont[i]/total; if(frac<=0)return;
+    const a2=ang+frac*360;
+    const x1=cx+r*Math.cos(Math.PI*ang/180), y1=cy+r*Math.sin(Math.PI*ang/180);
+    const x2=cx+r*Math.cos(Math.PI*a2/180),  y2=cy+r*Math.sin(Math.PI*a2/180);
+    const big=frac>0.5?1:0;
+    fatias+=`<path d="M${cx},${cy} L${x1.toFixed(1)},${y1.toFixed(1)} A${r},${r} 0 ${big} 1 ${x2.toFixed(1)},${y2.toFixed(1)} Z" fill="${m.cores[i]}"></path>`;
+    ang=a2;
+  });
+  const leg=m.opcoes.map((o,i)=>{
+    const pc=Math.round(cont[i]/total*100);
+    return `<div class="pz-leg"><span class="pz-cor" style="background:${m.cores[i]}"></span>${escapeHtml(o)} — <b>${pc}%</b> (${cont[i]})</div>`;
+  }).join('');
+  return `<div style="font-size:13px;color:var(--cinza);margin-bottom:10px">${arr.length} respostas</div>
+    <div class="pz-wrap"><svg viewBox="0 0 260 260" class="pz-svg">${fatias}</svg><div class="pz-legs">${leg}</div></div>`;
+}
+function vizEscala(arr,m){
+  const nums=arr.map(Number).filter(n=>!isNaN(n));
+  const media=nums.length?(nums.reduce((a,b)=>a+b,0)/nums.length):0;
+  const cont={}; for(let i=m.min;i<=m.max;i++)cont[i]=0;
+  nums.forEach(n=>{ if(n>=m.min&&n<=m.max)cont[n]++; });
+  const maior=Math.max(1,...Object.values(cont));
+  let barras='';
+  for(let i=m.min;i<=m.max;i++){
+    const h=Math.round(cont[i]/maior*100);
+    barras+=`<div class="es-col"><div class="es-bar" style="height:${h}%;background:${m.cor}"></div><div class="es-rot">${i}</div></div>`;
+  }
+  return `<div class="es-media" style="color:${m.cor}">${media.toFixed(1)}<span> média · ${nums.length} respostas</span></div>
+    <div class="es-graf">${barras}</div>`;
+}
+function vizRadar(arr,m){
+  const n=m.eixos.length;
+  const soma=m.eixos.map(()=>0), cnt=m.eixos.map(()=>0);
+  arr.forEach(v=>{ if(Array.isArray(v))v.forEach((x,i)=>{ if(i<n){soma[i]+=Number(x)||0;cnt[i]++;} }); });
+  const med=m.eixos.map((e,i)=>cnt[i]?soma[i]/cnt[i]:0);
+  const cx=150,cy=140,R=105;
+  const pt=(i,val)=>{
+    const ang=-Math.PI/2 + i*2*Math.PI/n;
+    const rr=R*(val-m.min)/(m.max-m.min);
+    return [cx+rr*Math.cos(ang), cy+rr*Math.sin(ang)];
+  };
+  let grade='';
+  [0.25,0.5,0.75,1].forEach(f=>{
+    const pts=m.eixos.map((e,i)=>{const p=pt(i,m.min+f*(m.max-m.min));return p[0].toFixed(1)+','+p[1].toFixed(1);}).join(' ');
+    grade+=`<polygon points="${pts}" fill="none" stroke="#e0e6e2" stroke-width="1"></polygon>`;
+  });
+  let eixos='';
+  m.eixos.forEach((e,i)=>{
+    const p=pt(i,m.max);
+    eixos+=`<line x1="${cx}" y1="${cy}" x2="${p[0].toFixed(1)}" y2="${p[1].toFixed(1)}" stroke="#e0e6e2"></line>`;
+    const lp=pt(i,m.max*1.16);
+    eixos+=`<text x="${lp[0].toFixed(1)}" y="${lp[1].toFixed(1)}" font-size="13" fill="#2c3a42" text-anchor="middle" dominant-baseline="middle">${escapeHtml(e)}</text>`;
+  });
+  const poly=m.eixos.map((e,i)=>{const p=pt(i,med[i]);return p[0].toFixed(1)+','+p[1].toFixed(1);}).join(' ');
+  const leg=m.eixos.map((e,i)=>`<span class="rd-leg">${escapeHtml(e)}: <b>${med[i].toFixed(1)}</b></span>`).join('');
+  return `<div style="font-size:13px;color:var(--cinza);margin-bottom:6px">${arr.length} respostas</div>
+    <svg viewBox="0 0 300 300" class="rd-svg">${grade}${eixos}
+      <polygon points="${poly}" fill="${m.cor}33" stroke="${m.cor}" stroke-width="2.5"></polygon></svg>
+    <div class="rd-legs">${leg}</div>`;
+}
+
+/* ---------- APRESENTADOR ---------- */
+function mentiAdmin(){
+  if(!chaveOk){
+    app.innerHTML=`<div class="topo"><span class="tag">Apresentador</span><h1>Acesso restrito</h1>
+      <p class="sub">Este painel precisa da chave de apresentador no link.</p></div>
+      <div class="card"><label for="ch">Digite a chave</label>
+      <input type="text" id="ch" placeholder="chave"><button class="btn btn-verde" id="okch">Entrar</button></div>`;
+    document.getElementById('okch').onclick=()=>{
+      const v=document.getElementById('ch').value.trim();
+      location.href=mentiUrl('menti-admin')+'&chave='+encodeURIComponent(v);
+    };
+    return;
+  }
+  if(!firebaseOk){ app.innerHTML='<div class="wrap"><div class="card"><div class="erro-cfg">Firebase não configurado.</div></div></div>'; return; }
+  db.ref(MENTI_RKEY+'/ativa').on('value',s=>{
+    const a=s.val(); mIdx=(a===null||a===undefined)?-1:a;
+    desenhaAdmin();
+  });
+}
+function desenhaAdmin(){
+  const atualTxt = mIdx<0 ? 'Nenhuma (tela de espera)' : `Pergunta ${mIdx+1}: ${MENTI[mIdx].tipo}`;
+  const lista=MENTI.map((m,i)=>`<button class="adm-q ${i===mIdx?'ativa':''}" data-i="${i}">
+    <span class="adm-n">${i+1}</span><span class="adm-t">${escapeHtml(m.q)}</span><span class="adm-tipo">${m.tipo}</span></button>`).join('');
+  app.innerHTML=`
+    <div class="topo"><span class="tag" style="background:#127a40;color:#fff">Apresentador</span>
+      <h1>Controle do Mentimeter</h1><p class="sub">No ar: <b>${atualTxt}</b></p></div>
+    <div class="card">
+      <div class="adm-nav">
+        <button class="btn btn-claro" id="prev">‹ Anterior</button>
+        <button class="btn btn-verde" id="next">Próxima ›</button>
+      </div>
+      <button class="btn btn-claro" id="espera" style="margin-top:10px">Tela de espera</button>
+      <button class="btn btn-claro" id="zerar" style="margin-top:10px">Apagar respostas desta pergunta</button>
+    </div>
+    <div class="card"><div class="secao-tit" style="margin-top:0">Ir direto para</div>${lista}</div>
+    <div class="card">
+      <div class="secao-tit" style="margin-top:0">Links para projetar e divulgar</div>
+      <p class="hint" style="text-align:left">Telão (projete este): <span class="url-mini" style="text-align:left">${mentiUrl('menti-telao')}</span></p>
+      <p class="hint" style="text-align:left">Participantes (QR / link): <span class="url-mini" style="text-align:left">${mentiUrl('menti')}</span></p>
+      <div id="qrparti" style="display:flex;justify-content:center;margin-top:8px"></div>
+    </div>`;
+  const setAtiva=(i)=>db.ref(MENTI_RKEY+'/ativa').set(i);
+  document.getElementById('prev').onclick=()=>setAtiva(Math.max(-1,mIdx-1));
+  document.getElementById('next').onclick=()=>setAtiva(Math.min(MENTI.length-1,mIdx+1));
+  document.getElementById('espera').onclick=()=>setAtiva(-1);
+  document.getElementById('zerar').onclick=()=>{ if(mIdx>=0&&confirm('Apagar todas as respostas da pergunta '+(mIdx+1)+'?'))db.ref(MENTI_RKEY+'/respostas/'+mIdx).remove(); };
+  [...document.querySelectorAll('.adm-q')].forEach(b=>b.onclick=()=>setAtiva(parseInt(b.dataset.i)));
+  try{ new QRCode(document.getElementById('qrparti'),{text:mentiUrl('menti'),width:150,height:150,colorDark:'#127a40',colorLight:'#fff'}); }catch(e){}
+}
+
+if(modoMenti==='menti') mentiParticipante();
+else if(modoMenti==='menti-telao') mentiTelao();
+else if(modoMenti==='menti-admin') mentiAdmin();
+else if(modoPainel)telaPainel();
+else telaInicial();
+</script>
+</body>
+</html>
