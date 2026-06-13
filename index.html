@@ -501,7 +501,7 @@ header p{font-size:.58rem;color:rgba(255,255,255,.5);margin-top:2px;letter-spaci
         </div>
       </div>
       <div class="warn-note">
-        ⚠️ <strong>Período:</strong> dados de 2019–2024. Anos anteriores removidos por ausência de dados completos em Araputanga. <strong>Dengue:</strong> este arquivo registra internações hospitalares por dengue grave (SIH/SUS), não casos notificados (SINAN). <strong>Transtornos mentais:</strong> Araputanga ausente do arquivo — não inserido. <strong>Neoplasias:</strong> dois arquivos distintos — internações (SIH, muito baixas) e óbitos (SIM/DO, serie contínua).
+        ⚠️ <strong>Período: 2019–2024.</strong> <strong>Dengue:</strong> este arquivo registra internações hospitalares por dengue grave (SIH/SUS), não casos notificados (SINAN). <strong>Transtornos mentais:</strong> Araputanga ausente do arquivo — não inserido. <strong>Neoplasias:</strong> dois arquivos distintos — internações (SIH, muito baixas) e óbitos (SIM/DO, serie contínua).
       </div>
       <div class="stabs2">
         <div class="stab2 on" data-int="int_respiratorio">Respiratório</div>
@@ -519,7 +519,7 @@ header p{font-size:.58rem;color:rgba(255,255,255,.5);margin-top:2px;letter-spaci
       </div>
       <div class="chart-wrap">
         <h4 id="int-chart-title">Internações por Doenças Respiratórias (J00-J99) — Araputanga</h4>
-        <div class="ch-sub" id="int-chart-sub">SIH/SUS · Anos com dados: 2010–2013 e 2019–2024 · Lacuna 2014–2018.</div>
+        <div class="ch-sub" id="int-chart-sub">SIH/SUS · Período: 2019–2024.</div>
         <canvas id="chart-internacoes-grupo" height="220"></canvas>
       </div>
       <div class="cexpl2">
@@ -1068,11 +1068,11 @@ var INT_META = {
   int_dpoc:           {label:"Internações por DPOC (J40-J47)",         cid:"J40-J47",  sis:"SIH/SUS",
     desc:"DPOC crescente: 5 em 2019 para 33 em 2024. Padrão consistente com exposição crônica a fumaça de queimadas em região de Cerrado/Pantanal."},
   int_asma:           {label:"Internações por Asma (J45-J46)",         cid:"J45-J46",  sis:"SIH/SUS",
-    desc:"Asma com padrão irregular. Alta histórica 2010-2013 (até 91/ano). Redução após 2019. Possível melhora de cobertura APS no manejo ambulatorial."},
+    desc:"Asma com padrão irregular no período 2019–2024. Redução consistente. Possível melhora de cobertura APS no manejo ambulatorial."},
   int_cardiovascular: {label:"Internações Cardiovasculares (I00-I99)", cid:"I00-I99",  sis:"SIH/SUS",
     desc:"Crescimento recente marcante: 3 em 2019 para 31 em 2024. Merece monitoramento — pode refletir envelhecimento populacional ou fluxo de referência."},
   int_renal:          {label:"Internações Renal/Urinário (N00-N39)",   cid:"N00-N39",  sis:"SIH/SUS",
-    desc:"Alta histórica 2010-2013 (72-89/ano). Redução 2019-2021. Crescimento recente: 28 em 2023, 43 em 2024."},
+    desc:"Redução 2019-2021 (16→5). Crescimento recente marcante: 28 em 2023, 43 em 2024."},
   int_gastro:         {label:"Internações Gastroenterites (A00-A09)",  cid:"A00-A09",  sis:"SIH/SUS",
     desc:"Maior série histórica. Redução consistente de 224 (2010) para 9 (2023) — provável melhora de saneamento e APS. Pequeno aumento em 2024 (24)."},
   int_dengue_hosp:    {label:"Internações por Dengue/Arboviroses (A90-A99)", cid:"A90-A99", sis:"SIH/SUS",
@@ -1096,7 +1096,7 @@ function renderIntChart(key) {
   // Atualizar títulos
   document.getElementById('int-chart-title').textContent = meta.label;
   document.getElementById('int-chart-sub').innerHTML =
-    meta.sis + ' · CID ' + meta.cid + ' · Período: 2019–2024 · Araputanga-MT.';
+    meta.sis + ' · CID ' + meta.cid + ' · Período: 2019–2024.';
   document.getElementById('int-desc-title').textContent = meta.label;
   document.getElementById('int-desc-body').textContent = ' ' + meta.desc;
 
@@ -1135,10 +1135,7 @@ function renderIntChart(key) {
             if(v === null) return 'Dado não disponível neste ano';
             return (isSIM ? 'Óbitos: ' : 'Internações: ') + v;
           },
-          afterLabel: function(item) {
-            if(item.dataIndex >= 4) return ''; // pós-2019 ok
-            return 'Período histórico (2010-2013)';
-          }
+
         }}
       },
       scales: {
@@ -1169,8 +1166,7 @@ document.querySelector('.tab[data-t="internacoes"]').addEventListener('click', f
 // SÉRIES DE INTERNAÇÕES E ÓBITOS — ARAPUTANGA
 // Fonte: TabNet/DATASUS (SIH/SUS e SIM/DO)
 // IBGE 5101258 — Araputanga-MT
-// Anos com dados: 2010–2013 e 2019–2024
-// Anos 2014–2018: ausentes nos arquivos CSV fornecidos (lacuna)
+// Período: 2019–2024
 // TRANSTORNOS MENTAIS: Araputanga ausente do arquivo — não inserido
 // Coletado e fornecido pelo usuário jun.2026
 // ═══════════════════════════════════════════════════════
