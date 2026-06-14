@@ -411,16 +411,54 @@ header p{font-size:.58rem;color:rgba(255,255,255,.5);margin-top:2px;letter-spaci
       <div class="ind-header-themed">
         <div class="iht-icon">🌿</div>
         <div>
-          <h3>Indicadores Ambientais</h3>
-          <p>Dados pendentes de coleta verificada.</p>
+          <h3>Cobertura e Uso da Terra — Araputanga</h3>
+          <p>MapBiomas Coleção 9 · IBGE 5101258 · Período 2019–2024 · Verificado jun.2026.</p>
         </div>
       </div>
-      <div class="warn-note">
-        <strong>Dados pendentes:</strong> Focos de calor (INPE/BDQueimadas por município), desmatamento (PRODES/TerraBrasilis), temperatura e precipitação (ERA5-Land/INMET). Nenhum dado ambiental foi verificado individualmente para Araputanga. Use os prompts abaixo para coletar.
-        <br><br>
-        <strong>INPE/BDQueimadas:</strong> queimadas.dgi.inpe.br<br>
-        <strong>TerraBrasilis/PRODES:</strong> terrabrasilis.dpi.inpe.br<br>
-        <strong>ERA5-Land:</strong> cds.climate.copernicus.eu
+
+      <div class="alert-grid" style="margin-bottom:14px">
+        <div class="alert-card warn">
+          <h4>🌳 Veg. Nativa 2024</h4>
+          <div class="big" style="color:#c0392b">92.916 ha</div>
+          <div class="small">-4.514 ha vs 2019 (-4,6%) · MapBiomas ✓</div>
+        </div>
+        <div class="alert-card warn">
+          <h4>🌲 Formação Florestal</h4>
+          <div class="big" style="color:#c0392b">16.589 ha</div>
+          <div class="small">-1.354 ha vs 2019 (-7,5%) · maior perda relativa</div>
+        </div>
+        <div class="alert-card warn">
+          <h4>🐄 Pastagem 2024</h4>
+          <div class="big" style="color:#d35400">114.682 ha</div>
+          <div class="small">+1.914 ha vs 2019 (+1,7%) · ~70% do município</div>
+        </div>
+        <div class="alert-card warn">
+          <h4>🌾 Soja 2024</h4>
+          <div class="big" style="color:#8e44ad">253 ha</div>
+          <div class="small">vs 65 ha em 2019 · expansão de 290%</div>
+        </div>
+      </div>
+
+      <div class="stabs2">
+        <div class="stab2 on" data-mb="veg_nativa_total">Veg. Nativa Total</div>
+        <div class="stab2" data-mb="formacao_florestal">Formação Florestal</div>
+        <div class="stab2" data-mb="formacao_savanica">Savânica (Cerrado)</div>
+        <div class="stab2" data-mb="pastagem">Pastagem</div>
+        <div class="stab2" data-mb="agropecuaria">Agropecuária Total</div>
+        <div class="stab2" data-mb="lavoura">Lavoura + Soja</div>
+        <div class="stab2" data-mb="mosaico">Mosaico de Usos</div>
+        <div class="stab2" data-mb="area_urbanizada">Área Urbanizada</div>
+      </div>
+
+      <div class="chart-wrap">
+        <h4 id="mb-chart-title">Vegetação Nativa Total — Araputanga 2019–2024</h4>
+        <div class="ch-sub" id="mb-chart-sub">MapBiomas Coleção 9 · ha · Período: 2019–2024.</div>
+        <canvas id="chart-mapbiomas" height="220"></canvas>
+      </div>
+      <div class="cexpl2">
+        <strong id="mb-desc-title"></strong>
+        <span id="mb-desc-body"></span>
+        <div class="csrc">Fonte: MapBiomas Coleção 9 — plataforma.mapbiomas.org. Araputanga-MT (IBGE 5101258). Coletado e fornecido pelo usuário jun.2026. Focos de calor (INPE) e dados climáticos (ERA5-Land/INMET) pendentes.</div>
       </div>
     </div>
   </div>
@@ -1187,6 +1225,110 @@ var INT_DATA = {
   int_neoplasias_sih: [null, null, null, 1, null, 1],
   obt_neoplasias_sim: [16, 10, 9, 15, 15, 20],
 };
+
+
+// ═══════════════════════════════════════════════════════
+// COBERTURA E USO DA TERRA — ARAPUTANGA
+// Fonte: MapBiomas Coleção 9. IBGE 5101258.
+// Período completo disponível: 1985–2024. Exibindo 2019–2024.
+// Coletado e fornecido pelo usuário jun.2026.
+// ═══════════════════════════════════════════════════════
+var MB_ANOS = [2019, 2020, 2021, 2022, 2023, 2024];
+var MB_DATA = {
+  veg_nativa_total:   [97430.1, 97307.2, 97078.6, 96513.8, 93176.5, 92916.3],
+  formacao_florestal: [17942.6, 17938.4, 17978.1, 17779.9, 16620.0, 16588.8],
+  formacao_savanica:  [26203.9, 26102.7, 25827.5, 25890.4, 25758.1, 25791.7],
+  pastagem:           [112767.6, 112800.0, 112771.6, 113076.2, 114642.6, 114681.9],
+  agropecuaria:       [114071.4, 114211.5, 114340.1, 114635.5, 116252.1, 116368.1],
+  lavoura:            [1412.4, 1436.8, 1436.8, 1445.4, 1501.3, 1519.7],
+  area_urbanizada:    [451.0, 457.3, 469.0, 472.5, 479.2, 485.2],
+  mosaico:            [485.6, 580.8, 726.7, 713.2, 735.4, 802.4],
+};
+
+var MB_META = {
+  veg_nativa_total:   {label:"Vegetação Nativa Total", cor:"#27ae60", unidade:"ha",
+    desc:"Soma de todas as classes de vegetação nativa (floresta, savana, campo, várzea). Perda de 4.514 ha entre 2019 e 2024 (-4,6%). Queda mais acentuada em 2023."},
+  formacao_florestal: {label:"Formação Florestal", cor:"#1a5276", unidade:"ha",
+    desc:"Floresta densa. Redução de 1.354 ha entre 2019 e 2024 (-7,5%). Queda mais intensa entre 2022 e 2023 (-1.160 ha em um ano)."},
+  formacao_savanica:  {label:"Formação Savânica (Cerrado)", cor:"#d4ac0d", unidade:"ha",
+    desc:"Cerrado sentido restrito. Estável com leve redução (-412 ha, -1,6%). Fragmentação crescente."},
+  pastagem:           {label:"Pastagem", cor:"#e67e22", unidade:"ha",
+    desc:"Pastagem cultivada. Crescimento de 1.914 ha (+1,7%) entre 2019 e 2024. Principal uso do solo no município (~70% da área)."},
+  agropecuaria:       {label:"Agropecuária Total", cor:"#c0392b", unidade:"ha",
+    desc:"Soma de pastagem + lavoura + outros usos agrícolas. Crescimento de 2.297 ha (+2,0%). Espelho inverso da perda de vegetação nativa."},
+  lavoura:            {label:"Lavoura (Temporária + Soja)", cor:"#8e44ad", unidade:"ha",
+    desc:"Lavoura temporária incluindo soja. Crescimento de 7,6% (1.412→1.520 ha). Soja passou de 65 ha (2019) para 253 ha (2024) — expansão de 290%."},
+  area_urbanizada:    {label:"Área Urbanizada", cor:"#7f8c8d", unidade:"ha",
+    desc:"Mancha urbana de Araputanga. Crescimento contínuo: 451 ha (2019) → 485 ha (2024), +7,6% em 5 anos."},
+  mosaico:            {label:"Mosaico de Usos", cor:"#e74c3c", unidade:"ha",
+    desc:"Mosaico de agricultura e vegetação — indicador de fragmentação da paisagem. Crescimento expressivo: +65% (486→802 ha). Sinal de pressão nas bordas de remanescentes."},
+};
+
+var mbChartInstance = null;
+
+function renderMbChart(key) {
+  var meta = MB_META[key]; if(!meta) return;
+  var vals = MB_DATA[key]; if(!vals) return;
+
+  document.getElementById('mb-chart-title').textContent = meta.label + ' — Araputanga 2019–2024';
+  document.getElementById('mb-chart-sub').innerHTML =
+    'MapBiomas Coleção 9 · ' + meta.unidade + ' · Período: 2019–2024.';
+  document.getElementById('mb-desc-title').textContent = meta.label;
+  document.getElementById('mb-desc-body').textContent = ' ' + meta.desc;
+
+  if(mbChartInstance) { mbChartInstance.destroy(); mbChartInstance = null; }
+
+  var ctx = document.getElementById('chart-mapbiomas');
+  if(!ctx) return;
+
+  mbChartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: MB_ANOS.map(String),
+      datasets: [{
+        label: meta.label + ' (ha)',
+        data: vals,
+        borderColor: meta.cor,
+        backgroundColor: meta.cor + '22',
+        tension: 0.3, fill: true, pointRadius: 6,
+        pointBackgroundColor: meta.cor
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true,
+      plugins: {
+        legend: {display: false},
+        tooltip: {callbacks: {
+          label: function(item) {
+            return meta.label + ': ' + item.raw.toLocaleString('pt-BR') + ' ha';
+          },
+          afterLabel: function(item) {
+            var diff = item.raw - vals[0];
+            var pct = ((diff / vals[0]) * 100).toFixed(1);
+            return 'vs 2019: ' + (diff >= 0 ? '+' : '') + diff.toLocaleString('pt-BR', {maximumFractionDigits:0}) + ' ha (' + pct + '%)';
+          }
+        }}
+      },
+      scales: {
+        y: {title: {display: true, text: 'Área (ha)'}, grid: {color: '#f0f4f8'},
+            ticks: {callback: function(v){ return v.toLocaleString('pt-BR'); }}},
+        x: {grid: {display: false}}
+      }
+    }
+  });
+}
+
+document.querySelectorAll('.stab2[data-mb]').forEach(function(s) {
+  s.addEventListener('click', function() {
+    document.querySelectorAll('.stab2[data-mb]').forEach(function(x){ x.classList.remove('on'); });
+    this.classList.add('on');
+    renderMbChart(this.dataset.mb);
+  });
+});
+
+document.querySelector('.tab[data-t="ambiente"]').addEventListener('click', function() {
+  setTimeout(function() { renderMbChart('veg_nativa_total'); }, 50);
+});
 
 </script>
 </body>
