@@ -1079,11 +1079,144 @@ function buildVacHeatmap(){
 }
 
 // ═══════════════════════════════════════
+
+// ═══════════════════════════════════════
+// INFANTIL CHARTS — renderizar só quando tab abrir
+// ═══════════════════════════════════════
+var infantilChartsRendered = false;
+var tmiSerieChartInst = null;
+var vacAraChartInst = null;
+
+function initInfantilCharts(){
+  if(infantilChartsRendered) return;
+  infantilChartsRendered = true;
+
+  // TMI série histórica — só 2023 verificado, resto null
+  var tmiSerieCtx = document.getElementById("chart-tmi-serie");
+  if(tmiSerieCtx){
+    var tmiAnos = ["2018","2019","2020","2021","2022","2023"];
+    var tmiVals = [null, null, null, null, null, 34.48];
+    var tmiOb   = [2, 2, 1, 6, 2, 8];
+    if(tmiSerieChartInst){ tmiSerieChartInst.destroy(); }
+    tmiSerieChartInst = new Chart(tmiSerieCtx, {
+      type:"bar",
+      data:{
+        labels: tmiAnos,
+        datasets:[
+          {
+            label:"Óbitos infantis (<1 ano)",
+            data: tmiOb,
+            backgroundColor: tmiOb.map(function(v){ return v>=5?"#c0392b":"#e74c3c88"; }),
+            borderRadius:4,
+            yAxisID:"y1"
+          },
+          {
+            label:"TMI 2023 (verificado IBGE)",
+            data: tmiVals,
+            type:"line",
+            borderColor:"#e74c3c", backgroundColor:"transparent",
+            borderWidth:2, pointRadius:8, pointBackgroundColor:"#e74c3c",
+            yAxisID:"y"
+          },
+          {
+            label:"MT 2023: 14,8",
+            data:[14.8,14.8,14.8,14.8,14.8,14.8],
+            type:"line",
+            borderColor:"#e67e22", borderDash:[6,3],
+            borderWidth:2, pointRadius:0, fill:false,
+            yAxisID:"y"
+          },
+          {
+            label:"Brasil 2021: 11,2",
+            data:[11.2,11.2,11.2,11.2,11.2,11.2],
+            type:"line",
+            borderColor:"#2471a3", borderDash:[6,3],
+            borderWidth:2, pointRadius:0, fill:false,
+            yAxisID:"y"
+          }
+        ]
+      },
+      options:{
+        responsive:true, maintainAspectRatio:true,
+        plugins:{
+          legend:{position:"bottom", labels:{usePointStyle:true, padding:12, font:{size:10}}},
+          tooltip:{callbacks:{
+            label:function(ctx){
+              if(ctx.dataset.label==="Óbitos infantis (<1 ano)")
+                return "Óbitos: " + ctx.raw;
+              if(ctx.raw===null) return "TMI: não calculado (NV pendente)";
+              return ctx.dataset.label + ": " + ctx.raw;
+            }
+          }}
+        },
+        scales:{
+          y:{position:"left", beginAtZero:true, suggestedMax:45,
+             title:{display:true, text:"TMI (óbitos/1000 NV)"},
+             grid:{color:"#f0f4f8"}},
+          y1:{position:"right", beginAtZero:true, suggestedMax:10,
+              title:{display:true, text:"N.º de óbitos"},
+              grid:{display:false}},
+          x:{grid:{display:false}}
+        }
+      }
+    });
+  }
+
+  // Vacinas Araputanga 2024
+  var vacAraCtx = document.getElementById("chart-vac-ara");
+  if(vacAraCtx){
+    var vacLabels = ["BCG","Penta D3","Tríplice D1","Polio VIP","Meningo C","Pneumo","Rotavírus","Tríplice D2","Febre Am.","Varicela","Polio Oral"];
+    var vacVals   = [92.1, 85.1, 85.9, 84.2, 83.0, 83.0, 81.3, 75.1, 76.3, 75.5, 73.9];
+    var vacMetas  = [90,   95,   95,   95,   95,   95,   90,   95,   95,   95,   95];
+    var vacColors = vacVals.map(function(v,i){ return v>=vacMetas[i]?"#27ae60":"#e74c3c"; });
+    if(vacAraChartInst){ vacAraChartInst.destroy(); }
+    vacAraChartInst = new Chart(vacAraCtx, {
+      type:"bar",
+      data:{
+        labels: vacLabels,
+        datasets:[
+          {label:"Cobertura 2024 (%)", data:vacVals,
+           backgroundColor:vacColors, borderRadius:4},
+          {label:"Meta MS (%)", data:vacMetas,
+           type:"line", borderColor:"#2471a3", borderDash:[6,3],
+           borderWidth:2, pointRadius:0, fill:false}
+        ]
+      },
+      options:{
+        responsive:true, maintainAspectRatio:true,
+        plugins:{
+          legend:{position:"bottom", labels:{usePointStyle:true, padding:12, font:{size:10}}},
+          tooltip:{callbacks:{
+            afterLabel:function(ctx){
+              if(ctx.datasetIndex===0){
+                var meta = vacMetas[ctx.dataIndex];
+                var diff = (ctx.raw - meta).toFixed(1);
+                return diff >= 0 ? "✓ acima da meta" : diff + "% abaixo da meta";
+              }
+            }
+          }}
+        },
+        scales:{
+          y:{min:60, max:100,
+             title:{display:true, text:"Cobertura (%)"},
+             grid:{color:"#f0f4f8"}},
+          x:{grid:{display:false}, ticks:{font:{size:10}}}
+        }
+      }
+    });
+  }
+}
+
+// Listener tab infantil
+document.querySelector('.tab[data-t="infantil"]').addEventListener('click', function(){
+  setTimeout(initInfantilCharts, 80);
+});
+
 // INIT
 // ═══════════════════════════════════════
 renderChart2("social","ips");
 renderChart2("saude","esf");
-renderChart2("ambiente","focos24");
+// ambiente sem default — renderizado via tab listener
 renderChart2("economia","pib");
 selectMun("5101258");
 buildVacHeatmap();
